@@ -1,6 +1,6 @@
 # TO SETUP DEMO
 
-1. in the same folder as docker.compose - create a .env file with the follwing properties
+1. create a .env file with the follwing properties
 ```
 BOOTSTRAP_SERVERS=
 API_KEY=
@@ -113,19 +113,19 @@ b.LATESTPRICE,
 FROM ORDERS_REKEY a JOIN MARKETDATA_TABLE b on a.SYMBOL=b.SYMBOL PARTITION BY ORDERID; 
 ```
 
-##START S3 SINK
+## START S3 SINK
 
 Use the fully managed S3 sink connector to export data from topics to S3 objects in either Avro, JSON, or Bytes formats.
 See documentation: https://docs.confluent.io/cloud/current/connectors/cc-s3-sink.html
 
 
-##OBSERVABLITY WITH PROMETHEUS & GRAFANA 
+## OBSERVABLITY WITH PROMETHEUS & GRAFANA 
 
 pull Metrics API data from Confluent Cloud cluster and be exported to Prometheus.
 follow the demo in Cloud Exporter for Metrics API: https://github.com/vdesabou/kafka-docker-playground/tree/master/ccloud/ccloudexporter
 
 
-##DATA GOVERNANCE WITH TERRAFORM
+## DATA GOVERNANCE WITH TERRAFORM
 Use this Terraform provider: https://github.com/Mongey/terraform-provider-kafka
 
 Example provider with Confluent Cloud which creates an ACL and topic
