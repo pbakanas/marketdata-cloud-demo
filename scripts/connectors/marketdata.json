@@ -1,0 +1,8 @@
+{
+    "name": "marketdata",
+    "config": {
+        "connector.class": "com.github.cjmatta.kafka.connect.sse.ServerSentEventsSourceConnector",
+        "sse.uri": "https://cloud-sse.iexapis.com/stable/stocksUSNoUTP?symbols=spy,twtr,ibm&token=pk_5bf71562d6ab4a17aca2cb091a5372a7",
+        "topic": "marketdata-raw",
+    }
+}

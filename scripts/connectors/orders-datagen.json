@@ -1,0 +1,10 @@
+{
+    "name": "orders-datagen",
+    "config": {
+        "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+        "kafka.topic": "orders-raw",
+        "schema.filename": "/schemas/orders.json",
+        "schema.keyfield": "orderId",
+        "max.interval": 1500
+    }
+}

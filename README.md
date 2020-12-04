@@ -1,0 +1,158 @@
+#TO SETUP DEMO
+
+1. in the same folder as docker.compose - create a .env file with the follwing properties
+```
+BOOTSTRAP_SERVERS=
+API_KEY=
+API_SECRET=
+SCHEMA_REGISTRY_URL=
+SR_API_SECRET=
+```
+
+2. Bring up connect via docker
+```
+docker compose up -d
+```
+
+3. Check that it is running
+```
+docker logs connect 
+
+docker-compose exec connect curl -s -X GET http://connect:8083/connectors | jq .
+
+docker-compose exec connect curl -s -X GET http://connect:8083/connector-plugins | jq .
+```
+
+##START MARKET DATA CONNECT
+_NOTE:  API key for [iexcloud.io](https://iexcloud.io/) that has an allowance of 5 million requests per month, please don't leave the marketdata connector running all the time as it will eat up this request allowance_
+
+1. run market data
+```
+./scripts/connectors/submit-connector.sh scripts/connectors/marketdata.json
+```
+
+2. Give it structure with KSQL by first registering Marketdata with KSQL, extracting the JSON fields, and assigning a key
+```
+CREATE STREAM MARKETDATA (id STRING, data STRING) WITH (KAFKA_TOPIC='marketdata-raw', VALUE_FORMAT='avro');      
+
+
+CREATE STREAM MARKET_DATA_LIVE WITH (KAFKA_TOPIC='MARKET_DATA_LIVE', VALUE_FORMAT='avro') as select extractjsonfield(data, '$[0].symbol') as SYMBOL, CAST(extractjsonfield(data, '$[0].latestPrice') as DOUBLE) as LATESTPRICE, CAST(extractjsonfield(data, '$[0].open') as DOUBLE) as OPEN, CAST(extractjsonfield(data, '$[0].close') as DOUBLE) as CLOSE, CAST(extractjsonfield(data, '$[0].high') as DOUBLE) as HIGH, CAST(extractjsonfield(data, '$[0].low') as DOUBLE) as LOW, CAST(extractjsonfield(data, '$[0].volume') as DOUBLE) as VOLUME, CAST(extractjsonfield(data, '$[0].lastTradeTime') as BIGINT) as LASTTRADETIME FROM marketdata;
+
+
+CREATE STREAM MARKET_DATA_LIVE_KEYED WITH (KAFKA_TOPIC='MARKET_DATA_LIVE_KEYED', VALUE_FORMAT='avro') as select * FROM MARKET_DATA_LIVE PARTITION BY SYMBOL;
+```
+
+3. Create a couple tables for further KSQL exploration
+```
+CREATE TABLE MARKETDATA_TABLE WITH (KAFKA_TOPIC='MARKETDATA_TABLE') AS 
+SELECT
+  SYMBOL as SYMBOL,
+  LATEST_BY_OFFSET(LATESTPRICE) as LATESTPRICE,
+  LATEST_BY_OFFSET(OPEN) as OPEN,
+  LATEST_BY_OFFSET(CLOSE) as CLOSE,
+  LATEST_BY_OFFSET(HIGH) as HIGH,
+  LATEST_BY_OFFSET(LOW) as LOW,
+  LATEST_BY_OFFSET(VOLUME) as VOLUME,
+  LATEST_BY_OFFSET(LASTTRADETIME) as LASTTRADETIME
+FROM MARKET_DATA_LIVE_KEYED
+GROUP BY symbol;
+
+
+CREATE TABLE MARKETDATA_TOTAL_RUNNING WITH (KAFKA_TOPIC='MARKETDATA_TOTAL_RUNNING') AS 
+SELECT
+  SYMBOL as SYMBOL,
+  SUM(LATESTPRICE) as TOTAL_RUNNING_PRICE,
+  SUM(VOLUME) as TOTAL_RUNNING_VOLUME
+FROM MARKET_DATA_LIVE_KEYED
+GROUP BY symbol;
+
+```
+
+4. To delete / pause / resume connector
+```
+docker-compose exec connect curl -s -X DELETE http://connect:8083/connectors/marketdata/ | jq .
+docker-compose exec connect curl -s -X PUT http://connect:8083/connectors/marketdata/pause | jq .
+docker-compose exec connect curl -s -X PUT http://connect:8083/connectors/marketdata/resume | jq .
+```
+
+
+## START ORDERS AND STOCKTRADES CONNECTORS
+
+1. Run orders and stocktrades
+```
+./scripts/connectors/submit-connector.sh scripts/connectors/stocktrades-datagen.json
+./scripts/connectors/submit-connector.sh scripts/connectors/orders-datagen.json
+```
+
+2. Enrich the orders:
+
+Create a stream of orders-raw
+```
+CREATE STREAM orders (orderid INT, side STRING, quantity INT, symbol STRING, account STRING, userid STRING) WITH (KAFKA_TOPIC='orders-raw', VALUE_FORMAT='avro');
+```
+Rekey the orders data
+```
+CREATE STREAM ORDERS_REKEY WITH (KAFKA_TOPIC='ORDERS_REKEY',VALUE_FORMAT='AVRO')
+AS SELECT
+  symbol as symbol
+, side as side
+, quantity as quantity
+, orderid as orderid
+, userid as userid
+, account as account
+FROM orders PARTITION BY ORDERID;
+```
+Join marketdata table and orders to get trade costs
+```
+CREATE STREAM ORDERS_ENRICHED WITH (KAFKA_TOPIC='ORDERS_ENRICHED',VALUE_FORMAT='AVRO')
+AS SELECT a.ORDERID,
+a.SYMBOL,
+a.QUANTITY,
+b.LATESTPRICE,
+(a.QUANTITY * b.LATESTPRICE) as TOTAL_COST
+FROM ORDERS_REKEY a JOIN MARKETDATA_TABLE b on a.SYMBOL=b.SYMBOL PARTITION BY ORDERID; 
+```
+
+##START S3 SINK
+
+Use the fully managed S3 sink connector to export data from topics to S3 objects in either Avro, JSON, or Bytes formats.
+See documentation: https://docs.confluent.io/cloud/current/connectors/cc-s3-sink.html
+
+
+##OBSERVABLITY WITH PROMETHEUS & GRAFANA 
+
+pull Metrics API data from Confluent Cloud cluster and be exported to Prometheus.
+follow the demo in Cloud Exporter for Metrics API: https://github.com/vdesabou/kafka-docker-playground/tree/master/ccloud/ccloudexporter
+
+
+##DATA GOVERNANCE WITH TERRAFORM
+Use this Terraform provider: https://github.com/Mongey/terraform-provider-kafka
+
+Example provider with Confluent Cloud which creates an ACL and topic
+```
+provider "kafka" {
+  bootstrap_servers = ["CLOUD_BOOTSTRAP_URL"]
+  tls_enabled    = true
+  sasl_username  = "API_KEY"
+  sasl_password  = "API_SECRET"
+  sasl_mechanism = "plain"
+}
+
+resource "kafka_acl" "testacl" {
+  resource_name       = "testtopic"
+  resource_type       = "Topic"
+  acl_principal       = "User:Alice"
+  acl_host            = "*"
+  acl_operation       = "Write"
+  acl_permission_type = "Deny"
+}
+
+resource "kafka_topic" "testtopic" {
+  name               = "testtopic"
+  replication_factor = 3
+  partitions         = 3
+
+  config = {
+  }
+}
+```

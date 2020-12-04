@@ -1,0 +1,82 @@
+{
+    "namespace": "cmatta",
+    "name": "StockTrade",
+    "doc": "Defines a hypothetical stock trade using some known test stock symbols.",
+    "type": "record",
+    "fields": [
+        {
+            "name": "orderId",
+            "doc": "The id of the order",
+            "type": {
+                "type": "int",
+                "arg.properties": {
+                    "iteration": {
+                        "start": 1,
+                        "step": 1   
+                    }
+                }
+            }
+        },
+        {
+            "name": "side",
+            "doc": "A simulated trade side (buy or sell or short)",
+            "type": {
+                "type": "string",
+                "arg.properties": {
+                    "options": [
+                        "BUY",
+                        "SELL"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "quantity",
+            "doc": "A simulated random quantity of the trade",
+            "type": {
+                "type": "int",
+                "arg.properties": {
+                    "options": [100]
+                }
+            }
+        },
+        {
+            "name": "symbol",
+            "doc": "Simulated stock symbols",
+            "type": {
+                "type": "string",
+                "arg.properties": {
+                    "options": [
+                        "SPY",
+                        "TWTR",
+                        "IBM"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "account",
+            "doc": "Simulated accounts assigned to the trade",
+            "type": {
+                "type": "string",
+                "arg.properties": {
+                    "options": [
+                        "ABC123",
+                        "LMN456",
+                        "XYZ789"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "userid",
+            "doc": "The simulated user who executed the trade",
+            "type": {
+                "type": "string",
+                "arg.properties": {
+                    "regex": "User_[1-9]{0,1}"
+                }
+            }
+        }
+    ]
+}
