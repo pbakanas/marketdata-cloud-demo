@@ -1,4 +1,4 @@
-#TO SETUP DEMO
+# TO SETUP DEMO
 
 1. in the same folder as docker.compose - create a .env file with the follwing properties
 ```
@@ -23,7 +23,7 @@ docker-compose exec connect curl -s -X GET http://connect:8083/connectors | jq .
 docker-compose exec connect curl -s -X GET http://connect:8083/connector-plugins | jq .
 ```
 
-##START MARKET DATA CONNECT
+## START MARKET DATA CONNECT
 _NOTE:  API key for [iexcloud.io](https://iexcloud.io/) that has an allowance of 5 million requests per month, please don't leave the marketdata connector running all the time as it will eat up this request allowance_
 
 1. run market data
