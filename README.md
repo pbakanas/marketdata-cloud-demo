@@ -1,3 +1,5 @@
+![alt text](https://github.com/pbakanas/marketdata-cloud-demo/blob/master/demo_topology.png)
+
 # TO SETUP DEMO
 
 1. create a .env file with the follwing properties
