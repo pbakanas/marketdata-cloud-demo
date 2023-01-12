@@ -1,8 +1,12 @@
 ![alt text](https://github.com/pbakanas/marketdata-cloud-demo/blob/master/demo_topology.png)
 
+_NOTE:  This demo uses [iexcloud.io](https://iexcloud.io/) to get the marketdata.  You will have to create your own IEX token to interact with datasets._
+
 # TO SETUP DEMO
 
-1. create a .env file with the follwing properties
+1. Update the /scripts/connectors/marketdata.json file with your IEX token.
+
+2. create a .env file with the follwing properties
 ```
 BOOTSTRAP_SERVERS=
 API_KEY=
@@ -11,12 +15,12 @@ SCHEMA_REGISTRY_URL=
 SR_API_SECRET=
 ```
 
-2. Bring up connect via docker
+3. Bring up connect via docker
 ```
 docker compose up -d
 ```
 
-3. Check that it is running
+4. Check that it is running
 ```
 docker logs connect 
 
@@ -26,7 +30,6 @@ docker-compose exec connect curl -s -X GET http://connect:8083/connector-plugins
 ```
 
 ## START MARKET DATA CONNECT
-_NOTE:  API key for [iexcloud.io](https://iexcloud.io/) that has an allowance of 5 million requests per month, please don't leave the marketdata connector running all the time as it will eat up this request allowance_
 
 1. run market data
 ```
@@ -119,42 +122,3 @@ FROM ORDERS_REKEY a JOIN MARKETDATA_TABLE b on a.SYMBOL=b.SYMBOL PARTITION BY OR
 
 Use the fully managed S3 sink connector to export data from topics to S3 objects in either Avro, JSON, or Bytes formats.
 See documentation: https://docs.confluent.io/cloud/current/connectors/cc-s3-sink.html
-
-
-## OBSERVABLITY WITH PROMETHEUS & GRAFANA 
-
-pull Metrics API data from Confluent Cloud cluster and be exported to Prometheus.
-follow the demo in Cloud Exporter for Metrics API: https://github.com/vdesabou/kafka-docker-playground/tree/master/ccloud/ccloudexporter
-
-
-## DATA GOVERNANCE WITH TERRAFORM
-Use this Terraform provider: https://github.com/Mongey/terraform-provider-kafka
-
-Example provider with Confluent Cloud which creates an ACL and topic
-```
-provider "kafka" {
-  bootstrap_servers = ["CLOUD_BOOTSTRAP_URL"]
-  tls_enabled    = true
-  sasl_username  = "API_KEY"
-  sasl_password  = "API_SECRET"
-  sasl_mechanism = "plain"
-}
-
-resource "kafka_acl" "testacl" {
-  resource_name       = "testtopic"
-  resource_type       = "Topic"
-  acl_principal       = "User:Alice"
-  acl_host            = "*"
-  acl_operation       = "Write"
-  acl_permission_type = "Deny"
-}
-
-resource "kafka_topic" "testtopic" {
-  name               = "testtopic"
-  replication_factor = 3
-  partitions         = 3
-
-  config = {
-  }
-}
-```
