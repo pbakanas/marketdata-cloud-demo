@@ -3,7 +3,7 @@
 Credit to [Chris Matta](https://github.com/cjmatta) who put together a lot of the components for this demo including the SSE connector, connector scripts and the orders schema.  
 
 _NOTE:  
-This demo uses [iexcloud.io](https://iexcloud.io/) to get the marketdata.  You will have to create your own IEX token to interact with datasets.
+This demo uses [iexcloud.io](https://iexcloud.io/) to get the marketdata.  You will have to create your own IEX token to interact with datasets. 
 This demo also requires a Confluent Cloud cluster_
 
 # TO SETUP DEMO
