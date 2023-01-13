@@ -35,23 +35,30 @@ docker-compose exec connect curl -s -X GET http://connect:8083/connector-plugins
 
 ## START MARKET DATA CONNECT
 
-1. run market data
+1. Run the market data connector:  
 ```
 ./scripts/connectors/submit-connector.sh scripts/connectors/marketdata.json
 ```
+You should see market data events produced into the "marketdata-raw" topic - one event for each Symbol buy or sell. 
 
-2. Give it structure with KSQL by first registering Marketdata with KSQL, extracting the JSON fields, and assigning a key
+2. If you have not set up KSQL cluster in Confluent Cloud - do so following these instructions: [Add KSQL to the Cluster](https://docs.confluent.io/cloud/current/get-started/index.html#section-2-add-ksql-cloud-to-the-cluster)
+
+3. Execute the followign KSQL queries in the KSQL Editor to clean up the market data events:
+
+Register Marketdata with KSQL
 ```
 CREATE STREAM MARKETDATA (id STRING, data STRING) WITH (KAFKA_TOPIC='marketdata-raw', VALUE_FORMAT='avro');      
-
-
+```
+Extract the JSON fields
+```
 CREATE STREAM MARKET_DATA_LIVE WITH (KAFKA_TOPIC='MARKET_DATA_LIVE', VALUE_FORMAT='avro') as select extractjsonfield(data, '$[0].symbol') as SYMBOL, CAST(extractjsonfield(data, '$[0].latestPrice') as DOUBLE) as LATESTPRICE, CAST(extractjsonfield(data, '$[0].open') as DOUBLE) as OPEN, CAST(extractjsonfield(data, '$[0].close') as DOUBLE) as CLOSE, CAST(extractjsonfield(data, '$[0].high') as DOUBLE) as HIGH, CAST(extractjsonfield(data, '$[0].low') as DOUBLE) as LOW, CAST(extractjsonfield(data, '$[0].volume') as DOUBLE) as VOLUME, CAST(extractjsonfield(data, '$[0].lastTradeTime') as BIGINT) as LASTTRADETIME FROM marketdata;
-
-
+```
+Assign a key
+```
 CREATE STREAM MARKET_DATA_LIVE_KEYED WITH (KAFKA_TOPIC='MARKET_DATA_LIVE_KEYED', VALUE_FORMAT='avro') as select * FROM MARKET_DATA_LIVE PARTITION BY SYMBOL;
 ```
 
-3. Create a couple tables for further KSQL exploration
+4. Create a couple tables for further KSQL exploration
 ```
 CREATE TABLE MARKETDATA_TABLE WITH (KAFKA_TOPIC='MARKETDATA_TABLE') AS 
 SELECT
@@ -77,7 +84,7 @@ GROUP BY symbol;
 
 ```
 
-4. To delete / pause / resume connector
+_Notes To delete / pause / resume connector use the below commands_
 ```
 docker-compose exec connect curl -s -X DELETE http://connect:8083/connectors/marketdata/ | jq .
 docker-compose exec connect curl -s -X PUT http://connect:8083/connectors/marketdata/pause | jq .
@@ -93,7 +100,7 @@ docker-compose exec connect curl -s -X PUT http://connect:8083/connectors/market
 ./scripts/connectors/submit-connector.sh scripts/connectors/orders-datagen.json
 ```
 
-2. Enrich the orders:
+2. Execute the followign KSQL queries in the KSQL Editor to clean up the order events
 
 Create a stream of orders-raw
 ```
