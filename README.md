@@ -96,13 +96,14 @@ docker-compose exec connect curl -s -X PUT http://connect:8083/connectors/market
 
 ## START ORDERS AND STOCKTRADES CONNECTORS
 
-1. Run orders and stocktrades
+1. In Confluent Cloud cluster creaet a "orders-raw" topic
+
+2. Run orders datagen connector
 ```
-./scripts/connectors/submit-connector.sh scripts/connectors/stocktrades-datagen.json
 ./scripts/connectors/submit-connector.sh scripts/connectors/orders-datagen.json
 ```
 
-2. Execute the followign KSQL queries in the KSQL Editor to clean up the order events
+3. Execute the followign KSQL queries in the KSQL Editor to clean up the order events
 
 Create a stream of orders-raw
 ```
