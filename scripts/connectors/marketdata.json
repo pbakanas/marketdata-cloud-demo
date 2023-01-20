@@ -1,3 +1,4 @@
+//The SSE URI format may change depening on your IEX cloud dataset
 {
     "name": "marketdata",
     "config": {
