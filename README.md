@@ -3,14 +3,14 @@
 Credit to [Chris Matta](https://github.com/cjmatta) who put together a lot of the components for this demo including the SSE connector, connector scripts and the orders schema.  
 
 _NOTE:  
-This demo uses [iexcloud.io](https://iexcloud.io/) to get the marketdata.  You will have to create your own IEX token to interact with datasets. 
+This demo uses [iexcloud.io](https://iexcloud.io/) to get the marketdata.  You will have to create your own IEX token and marketdata workspace to interact with datasets. 
 This demo also requires a Confluent Cloud cluster_
 
 # TO SETUP DEMO
 
-1. Update the /scripts/connectors/marketdata.json file with your IEX token.
+1. Update the /scripts/connectors/marketdata.json file with your IEX token and workspace URL.
 
-2. create a .env file with the follwing properties
+2. create a .env file with the your Confluent Cloud cluster details
 ```
 BOOTSTRAP_SERVERS=
 API_KEY=
@@ -35,15 +35,17 @@ docker-compose exec connect curl -s -X GET http://connect:8083/connector-plugins
 
 ## START MARKET DATA CONNECT
 
-1. Run the market data connector:  
+1. In Confluent Cloud create a marketdata-raw topic.
+
+2. Run the market data connector:  
 ```
 ./scripts/connectors/submit-connector.sh scripts/connectors/marketdata.json
 ```
 You should see market data events produced into the "marketdata-raw" topic - one event for each Symbol buy or sell. 
 
-2. If you have not set up KSQL cluster in Confluent Cloud - do so following these instructions: [Add KSQL to the Cluster](https://docs.confluent.io/cloud/current/get-started/index.html#section-2-add-ksql-cloud-to-the-cluster)
+3. If you have not set up KSQL cluster in Confluent Cloud - do so following these instructions: [Add KSQL to the Cluster](https://docs.confluent.io/cloud/current/get-started/index.html#section-2-add-ksql-cloud-to-the-cluster)
 
-3. Execute the followign KSQL queries in the KSQL Editor to clean up the market data events:
+4. Execute the followign KSQL queries in the KSQL Editor to clean up the market data events:
 
 Register Marketdata with KSQL
 ```
@@ -58,7 +60,7 @@ Assign a key
 CREATE STREAM MARKET_DATA_LIVE_KEYED WITH (KAFKA_TOPIC='MARKET_DATA_LIVE_KEYED', VALUE_FORMAT='avro') as select * FROM MARKET_DATA_LIVE PARTITION BY SYMBOL;
 ```
 
-4. Create a couple tables for further KSQL exploration
+5. Create a couple tables for further KSQL exploration
 ```
 CREATE TABLE MARKETDATA_TABLE WITH (KAFKA_TOPIC='MARKETDATA_TABLE') AS 
 SELECT
