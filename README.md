@@ -3,12 +3,12 @@
 Credit to [Chris Matta](https://github.com/cjmatta) who put together a lot of the components for this demo including the SSE connector, connector scripts and the orders schema.  
 
 _NOTE:  
-This demo uses [iexcloud.io](https://iexcloud.io/) to get the marketdata.  You will have to create your own IEX token and marketdata data space to interact with datasets. 
+This demo uses [iexcloud.io](https://iexcloud.io/) to get the marketdata.  You will have to create your own IEX token and stock dataset. 
 This demo also requires a Confluent Cloud cluster_
 
 # TO SETUP DEMO
 
-1. Change the SEE URI in /scripts/connectors/marketdata.json with your IEX data set API request and IEX token.
+1. Change the SEE URI in /scripts/connectors/marketdata.json with your IEX dataset API request and IEX token.
 
 2. create a .env file with the your Confluent Cloud cluster details
 ```
