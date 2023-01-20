@@ -94,7 +94,7 @@ docker-compose exec connect curl -s -X PUT http://connect:8083/connectors/market
 ```
 
 
-## START ORDERS AND STOCKTRADES CONNECTORS
+## START ORDERS CONNECTOR
 
 1. In Confluent Cloud cluster creaet a "orders-raw" topic
 
@@ -121,7 +121,8 @@ AS SELECT
 , account as account
 FROM orders PARTITION BY ORDERID;
 ```
-Join marketdata table and orders to get trade costs
+
+4. Join marketdata table and orders to get trade costs
 ```
 CREATE STREAM ORDERS_ENRICHED WITH (KAFKA_TOPIC='ORDERS_ENRICHED',VALUE_FORMAT='AVRO')
 AS SELECT a.ORDERID,
